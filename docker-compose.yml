@@ -1,0 +1,13 @@
+version: '3'
+
+services:
+  cydust-bot:
+    build: .
+    volumes:
+      - ./stations.db:/app/stations.db
+      - ./subscribers.db:/app/subscribers.db
+      - ./logs:/var/log/supervisor
+    environment:
+      - TELEGRAM_TOKEN=${TELEGRAM_TOKEN}
+      - TZ=Asia/Nicosia
+    restart: always
