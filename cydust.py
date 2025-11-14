@@ -79,87 +79,146 @@ def analyze_air_quality(data_dict):
     so2 = parse_value(data_dict.get('so2'))
     co = parse_value(data_dict.get('co'))
     
+    # Pollutant health impact descriptions (based on WHO/EPA 2025 guidelines)
+    health_impacts = {
+        'pm_10': ('PM₁₀ (coarse particles)', 'Irritates airways, worsens asthma, aggravates heart/lung disease'),
+        'pm_2_5': ('PM₂.₅ (fine particles)', 'Penetrates lungs/bloodstream causing cardiovascular disease, stroke, lung cancer'),
+        'o3': ('Ozone (O₃)', 'Inflames airways, triggers asthma, reduces lung function, causes chronic bronchitis'),
+        'no2': ('Nitrogen dioxide (NO₂)', 'Aggravates asthma, reduces lung function, increases respiratory infections'),
+        'so2': ('Sulfur dioxide (SO₂)', 'Causes wheezing, chest tightness, shortness of breath, worsens heart disease'),
+        'co': ('Carbon monoxide (CO)', 'Reduces oxygen to organs (heart/brain), causes headaches, dizziness, fatigue')
+    }
+
+    # Pollutant sources for Cyprus (based on Cyprus Air Quality data and research)
+    pollutant_sources = {
+        'pm_10': 'Saharan/Middle Eastern dust storms (~50 days/year), local traffic, construction',
+        'pm_2_5': 'Vehicle exhaust, power generation, industrial facilities, regional transport',
+        'o3': 'Forms from traffic NOx + heat/sunlight (Eastern Mediterranean climate factor)',
+        'no2': 'Urban traffic (2-4x higher in cities), diesel vehicles, ships, aviation',
+        'so2': 'Power generation, cement production, industrial facilities, ship emissions',
+        'co': 'Vehicle exhaust, incomplete combustion from traffic congestion'
+    }
+
     # Analyze each pollutant
     high_pollutants = []
     moderate_pollutants = []
-    
+
     if pm10:
         if pm10 > pollutant_thresholds['pm_10']['high']:
-            high_pollutants.append(('dust (PM₁₀)', 'very high'))
+            high_pollutants.append(('pm_10', pm10, 'very high'))
         elif pm10 > pollutant_thresholds['pm_10']['moderate']:
-            high_pollutants.append(('dust (PM₁₀)', 'high'))
+            high_pollutants.append(('pm_10', pm10, 'high'))
         elif pm10 > pollutant_thresholds['pm_10']['low']:
-            moderate_pollutants.append(('dust (PM₁₀)', 'moderate'))
-    
+            moderate_pollutants.append(('pm_10', pm10, 'moderate'))
+
     if pm25:
         if pm25 > pollutant_thresholds['pm_2_5']['high']:
-            high_pollutants.append(('fine particles (PM₂.₅)', 'very high'))
+            high_pollutants.append(('pm_2_5', pm25, 'very high'))
         elif pm25 > pollutant_thresholds['pm_2_5']['moderate']:
-            high_pollutants.append(('fine particles (PM₂.₅)', 'high'))
+            high_pollutants.append(('pm_2_5', pm25, 'high'))
         elif pm25 > pollutant_thresholds['pm_2_5']['low']:
-            moderate_pollutants.append(('fine particles (PM₂.₅)', 'moderate'))
-    
+            moderate_pollutants.append(('pm_2_5', pm25, 'moderate'))
+
     if o3:
         if o3 > pollutant_thresholds['o3']['high']:
-            high_pollutants.append(('ozone', 'very high'))
+            high_pollutants.append(('o3', o3, 'very high'))
         elif o3 > pollutant_thresholds['o3']['moderate']:
-            high_pollutants.append(('ozone', 'high'))
+            high_pollutants.append(('o3', o3, 'high'))
         elif o3 > pollutant_thresholds['o3']['low']:
-            moderate_pollutants.append(('ozone', 'moderate'))
-    
+            moderate_pollutants.append(('o3', o3, 'moderate'))
+
     if no2:
         if no2 > pollutant_thresholds['no2']['high']:
-            high_pollutants.append(('nitrogen dioxide', 'very high'))
+            high_pollutants.append(('no2', no2, 'very high'))
         elif no2 > pollutant_thresholds['no2']['moderate']:
-            high_pollutants.append(('nitrogen dioxide', 'high'))
+            high_pollutants.append(('no2', no2, 'high'))
         elif no2 > pollutant_thresholds['no2']['low']:
-            moderate_pollutants.append(('nitrogen dioxide', 'moderate'))
+            moderate_pollutants.append(('no2', no2, 'moderate'))
+
+    if so2:
+        if so2 > pollutant_thresholds['so2']['high']:
+            high_pollutants.append(('so2', so2, 'very high'))
+        elif so2 > pollutant_thresholds['so2']['moderate']:
+            high_pollutants.append(('so2', so2, 'high'))
+        elif so2 > pollutant_thresholds['so2']['low']:
+            moderate_pollutants.append(('so2', so2, 'moderate'))
+
+    if co:
+        if co > pollutant_thresholds['co']['high']:
+            high_pollutants.append(('co', co, 'very high'))
+        elif co > pollutant_thresholds['co']['moderate']:
+            high_pollutants.append(('co', co, 'high'))
+        elif co > pollutant_thresholds['co']['low']:
+            moderate_pollutants.append(('co', co, 'moderate'))
     
     # Generate descriptive message based on status and pollutants
     if status == '🔴':
         if high_pollutants:
-            pollutant_names = [p[0] for p in high_pollutants[:2]]  # Top 2 pollutants
+            pollutant_names = [health_impacts[p[0]][0] for p in high_pollutants[:2]]  # Top 2 pollutants
             messages.append(f"❗ Warning! Severe air pollution: very high levels of {' and '.join(pollutant_names)}.")
             messages.append("Avoid outdoor activities. Keep windows closed.")
         else:
             messages.append("❗ Warning! Poor air quality detected!")
-            messages.append("Avoid going outdoors, especially if you’re sensitive.")
-    
+            messages.append("Avoid going outdoors, especially if you're sensitive.")
+
     elif status == '🟠':
         if high_pollutants:
-            pollutant_names = [p[0] for p in high_pollutants[:2]]
+            pollutant_names = [health_impacts[p[0]][0] for p in high_pollutants[:2]]
             messages.append(f"❗ Warning! High levels of {' and '.join(pollutant_names)}!")
             messages.append("Sensitive groups should reduce outdoor activity.")
         elif moderate_pollutants:
-            messages.append(f"❗ Warning! Elevated {moderate_pollutants[0][0]} levels.")
+            messages.append(f"❗ Warning! Elevated {health_impacts[moderate_pollutants[0][0]][0]} levels.")
             messages.append("Consider limiting extended time outdoors.")
         else:
             messages.append("❗ Warning! Moderate to high air pollution.")
             messages.append("Some individuals may feel effects during outdoor activity.")
-    
+
     elif status == '🟡':
         if moderate_pollutants:
-            pollutant_names = [p[0] for p in moderate_pollutants[:2]]
+            pollutant_names = [health_impacts[p[0]][0] for p in moderate_pollutants[:2]]
             messages.append(f"Attention: moderate levels of {' and '.join(pollutant_names)}.")
             messages.append("Air quality acceptable for most people.")
         else:
             messages.append("Moderate air quality.")
             messages.append("Sensitive individuals may want to limit outdoor time.")
-    
+
     elif status == '🟢':
         messages.append("Good air quality!")
         messages.append("Safe for all outdoor activities.")
-    
-    # Add specific advice based on dominant pollutant
+
+    # List elevated pollutants with health impacts
     if high_pollutants or moderate_pollutants:
+        messages.append("")  # Blank line separator
+
+        # Combine and sort by severity
+        all_concerning = high_pollutants + moderate_pollutants
+        if all_concerning:
+            messages.append("⚠️ Elevated pollutants:")
+            for pollutant_key, value, level in all_concerning[:3]:  # Show top 3
+                name, health_impact = health_impacts[pollutant_key]
+                messages.append(f"• {name}: {value:.1f} μg/m³ ({level})")
+                messages.append(f"  {health_impact}")
+
+        # Add source information for the most elevated pollutant
+        messages.append("")  # Blank line
         dominant_pollutants = high_pollutants if high_pollutants else moderate_pollutants
-        if any('dust' in p[0] or 'particles' in p[0] for p in dominant_pollutants):
-            messages.append("💨 Likely caused by dust storms or vehicle emissions.")
-        elif any('ozone' in p[0] for p in dominant_pollutants):
-            messages.append("☀️ High ozone often occurs on hot, sunny days.")
-        elif any('nitrogen' in p[0] for p in dominant_pollutants):
-            messages.append("🚗 Elevated NO₂ typically from traffic emissions.")
-    
+        top_pollutant = dominant_pollutants[0][0]  # Get the key of the most concerning pollutant
+
+        # Add appropriate emoji and source info
+        if top_pollutant in ['pm_10', 'pm_2_5']:
+            messages.append(f"💨 Common sources: {pollutant_sources[top_pollutant]}")
+            # Add specific dust storm context for Cyprus when PM10 is high
+            if top_pollutant == 'pm_10' and pm10 and pm10 > 100:
+                messages.append("🌍 Note: Cyprus experiences African/Middle Eastern dust ~50 days/year")
+        elif top_pollutant == 'o3':
+            messages.append(f"☀️ Formation: {pollutant_sources[top_pollutant]}")
+        elif top_pollutant == 'no2':
+            messages.append(f"🚗 Common sources: {pollutant_sources[top_pollutant]}")
+        elif top_pollutant == 'so2':
+            messages.append(f"🏭 Common sources: {pollutant_sources[top_pollutant]}")
+        elif top_pollutant == 'co':
+            messages.append(f"🚗 Common sources: {pollutant_sources[top_pollutant]}")
+
     return '\n'.join(messages) if messages else None
 
 # Connect to the SQLite database
