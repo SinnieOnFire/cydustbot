@@ -2,8 +2,6 @@
 
 A Telegram bot that monitors and reports air quality data from Cyprus air quality stations.
 
-**Repository**: https://github.com/SinnieOnFire/cydustbot
-
 ## Features
 
 - Hourly air quality updates for 11 monitoring stations across Cyprus
@@ -59,9 +57,7 @@ docker-compose logs -f cydust-bot
 
 #### 2. GitHub Actions Setup
 
-Enable automated deployment by configuring GitHub Secrets:
-
-**Go to**: https://github.com/SinnieOnFire/cydustbot/settings/secrets/actions
+Enable automated deployment by configuring GitHub Secrets.
 
 **Add these secrets**:
 
@@ -96,8 +92,6 @@ git commit -m "Your changes"
 git push  # Automatically deploys in ~24 seconds
 ```
 
-**Monitor**: https://github.com/SinnieOnFire/cydustbot/actions
-
 ## Architecture
 
 **Components**:
@@ -128,22 +122,3 @@ docker-compose up -d
 docker exec -it cydust_cydust-bot_1 sqlite3 /app/stations.db \
   "SELECT * FROM station03 ORDER BY id DESC LIMIT 5;"
 ```
-
-## Development
-
-See `CLAUDE.md` (local only) for detailed development documentation including:
-- Detailed architecture and timing
-- Common issues and solutions
-- Database schema
-- Deployment troubleshooting
-- Lessons learned
-
-## Links
-
-- **Repository**: https://github.com/SinnieOnFire/cydustbot
-- **Actions**: https://github.com/SinnieOnFire/cydustbot/actions
-- **Secrets**: https://github.com/SinnieOnFire/cydustbot/settings/secrets/actions
-
-## License
-
-Open source - available for personal use.
