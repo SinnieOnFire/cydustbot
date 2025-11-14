@@ -24,7 +24,7 @@ jobs:
         port: ${{ secrets.VPS_PORT || 22 }}
         script: |
           # Navigate to project directory
-          cd ${{ secrets.DEPLOY_PATH || '~/cydust' }}
+          cd ${{ secrets.DEPLOY_PATH }}
 
           # Pull latest changes
           git pull origin main || git pull origin master
