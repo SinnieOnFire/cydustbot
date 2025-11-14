@@ -60,11 +60,14 @@ def analyze_air_quality(data_dict):
     status = data_dict.get('status', '')
     messages = []
     
-    # Parse numeric values from strings
+    # Parse numeric values from strings (handles values with units like "69.6 μg/m³")
     def parse_value(val):
         if val and val != 'None':
             try:
-                return float(val.replace(',', '.'))
+                # Remove units by taking only the numeric part before any space
+                # Also handle comma as decimal separator
+                numeric_part = val.split()[0] if ' ' in val else val
+                return float(numeric_part.replace(',', '.'))
             except:
                 return None
         return None
