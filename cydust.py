@@ -45,14 +45,17 @@ key_mapping = {
     "update_time": "Timestamp"
 }
 
-# Pollutant thresholds based on EU/Cyprus standards (μg/m³)
+# Pollutant thresholds based on official Cyprus Air Quality standards (μg/m³)
+# Source: https://www.airquality.dli.mlsi.gov.cy/
+# Levels: Low (1), Moderate (2), High (3), Very High (4 = above high threshold)
 pollutant_thresholds = {
-    "pm_10": {"low": 50, "moderate": 100, "high": 200},
-    "pm_2_5": {"low": 25, "moderate": 50, "high": 100},
-    "o3": {"low": 100, "moderate": 140, "high": 180},
-    "no2": {"low": 100, "moderate": 200, "high": 400},
-    "so2": {"low": 125, "moderate": 350, "high": 500},
-    "co": {"low": 10000, "moderate": 20000, "high": 30000}
+    "pm_10": {"low": 50, "moderate": 100, "high": 200},      # PM10: 0-50 Low, 50-100 Mod, 100-200 High, >200 Very High
+    "pm_2_5": {"low": 25, "moderate": 50, "high": 100},      # PM2.5: 0-25 Low, 25-50 Mod, 50-100 High, >100 Very High
+    "o3": {"low": 100, "moderate": 140, "high": 180},        # O3: 0-100 Low, 100-140 Mod, 140-180 High, >180 Very High
+    "no2": {"low": 100, "moderate": 150, "high": 200},       # NO2: 0-100 Low, 100-150 Mod, 150-200 High, >200 Very High
+    "so2": {"low": 150, "moderate": 250, "high": 350},       # SO2: 0-150 Low, 150-250 Mod, 250-350 High, >350 Very High
+    "co": {"low": 7000, "moderate": 15000, "high": 20000},   # CO: 0-7000 Low, 7000-15000 Mod, 15000-20000 High, >20000 Very High
+    "c6h6": {"low": 5, "moderate": 10, "high": 15}           # C6H6: 0-5 Low, 5-10 Mod, 10-15 High, >15 Very High
 }
 
 def analyze_air_quality(data_dict):
@@ -78,25 +81,29 @@ def analyze_air_quality(data_dict):
     no2 = parse_value(data_dict.get('no2'))
     so2 = parse_value(data_dict.get('so2'))
     co = parse_value(data_dict.get('co'))
-    
-    # Pollutant health impact descriptions (based on WHO/EPA 2025 guidelines)
+    c6h6 = parse_value(data_dict.get('c6h6'))
+
+    # Pollutant health impact descriptions (based on Cyprus Air Quality guidelines)
+    # Source: https://www.airquality.dli.mlsi.gov.cy/
     health_impacts = {
         'pm_10': ('PM₁₀ (coarse particles)', 'May irritate airways, affect asthma and heart/lung conditions'),
-        'pm_2_5': ('PM₂.₅ (fine particles)', 'Can affect respiratory and cardiovascular health with long-term exposure'),
+        'pm_2_5': ('PM₂.₅ (fine particles)', 'Can affect respiratory and cardiovascular health'),
         'o3': ('Ozone (O₃)', 'May affect airways, reduce lung function, worsen asthma symptoms'),
         'no2': ('Nitrogen dioxide (NO₂)', 'May worsen asthma and increase respiratory infection susceptibility'),
         'so2': ('Sulfur dioxide (SO₂)', 'May cause breathing difficulty, especially for people with asthma'),
-        'co': ('Carbon monoxide (CO)', 'Reduces oxygen delivery, may cause headaches and dizziness')
+        'co': ('Carbon monoxide (CO)', 'Reduces oxygen delivery, may cause headaches and dizziness'),
+        'c6h6': ('Benzene (C₆H₆)', 'Long-term exposure may affect blood cell production; known carcinogen')
     }
 
-    # Pollutant sources for Cyprus (based on Cyprus Air Quality data and research)
+    # Pollutant sources for Cyprus
     pollutant_sources = {
         'pm_10': 'Saharan/Middle Eastern dust storms, local traffic, construction',
         'pm_2_5': 'Vehicle exhaust, power generation, industrial facilities, regional transport',
         'o3': 'Forms from traffic NOx + sunlight (Eastern Mediterranean climate factor)',
-        'no2': 'Urban traffic, diesel vehicles, ships, aviation',
+        'no2': 'Urban traffic, diesel vehicles, ships, industrial combustion',
         'so2': 'Power generation, cement production, industrial facilities, ship emissions',
-        'co': 'Vehicle exhaust, incomplete combustion from traffic'
+        'co': 'Vehicle exhaust, incomplete combustion from traffic',
+        'c6h6': 'Vehicle exhaust (especially petrol), fuel evaporation, industrial processes'
     }
 
     # Analyze each pollutant
@@ -150,41 +157,54 @@ def analyze_air_quality(data_dict):
             high_pollutants.append(('co', co, 'high'))
         elif co > pollutant_thresholds['co']['low']:
             moderate_pollutants.append(('co', co, 'moderate'))
-    
+
+    if c6h6:
+        if c6h6 > pollutant_thresholds['c6h6']['high']:
+            high_pollutants.append(('c6h6', c6h6, 'very high'))
+        elif c6h6 > pollutant_thresholds['c6h6']['moderate']:
+            high_pollutants.append(('c6h6', c6h6, 'high'))
+        elif c6h6 > pollutant_thresholds['c6h6']['low']:
+            moderate_pollutants.append(('c6h6', c6h6, 'moderate'))
+
     # Generate descriptive message based on status and pollutants
+    # Health recommendations based on official Cyprus Air Quality guidelines
     if status == '🔴':
         if high_pollutants:
             pollutant_names = [health_impacts[p[0]][0] for p in high_pollutants[:2]]  # Top 2 pollutants
-            messages.append(f"Poor air quality: high levels of {' and '.join(pollutant_names)}.")
-            messages.append("Consider avoiding prolonged outdoor activities.")
+            messages.append(f"Very high air pollution: {' and '.join(pollutant_names)}.")
+            messages.append("Sensitive groups (elderly, children, respiratory/cardiovascular patients) should avoid outdoor activity and stay away from high pollution areas.")
         else:
-            messages.append("Poor air quality detected.")
-            messages.append("Consider limiting time outdoors, especially if sensitive.")
+            messages.append("Very high air pollution detected.")
+            messages.append("Sensitive groups should avoid outdoor activity. Healthy individuals may experience irritation symptoms.")
 
     elif status == '🟠':
         if high_pollutants:
             pollutant_names = [health_impacts[p[0]][0] for p in high_pollutants[:2]]
-            messages.append(f"Elevated levels of {' and '.join(pollutant_names)}.")
-            messages.append("Sensitive groups may want to reduce outdoor activity.")
+            messages.append(f"High levels of {' and '.join(pollutant_names)}.")
+            messages.append("Sensitive groups should avoid outdoor/physical activity. Asthma patients may need reliever inhalers more often.")
         elif moderate_pollutants:
             messages.append(f"Elevated {health_impacts[moderate_pollutants[0][0]][0]} levels.")
-            messages.append("Consider reducing prolonged outdoor activities.")
+            messages.append("Sensitive groups should consider reducing strenuous outdoor activities.")
         else:
-            messages.append("Moderate to unhealthy air quality.")
-            messages.append("Some people may experience effects during outdoor activity.")
+            messages.append("High air pollution.")
+            messages.append("Sensitive groups may experience adverse health effects.")
 
     elif status == '🟡':
         if moderate_pollutants:
             pollutant_names = [health_impacts[p[0]][0] for p in moderate_pollutants[:2]]
             messages.append(f"Moderate levels of {' and '.join(pollutant_names)}.")
-            messages.append("Air quality acceptable for most people.")
+            messages.append("Sensitive groups with respiratory problems should consider reducing strenuous outdoor activities.")
         else:
             messages.append("Moderate air quality.")
-            messages.append("Air quality is acceptable for most people.")
+            messages.append("Air quality is acceptable; sensitive groups may want to limit prolonged outdoor exertion.")
 
     elif status == '🟢':
         messages.append("Good air quality.")
         messages.append("Air quality is suitable for outdoor activities.")
+
+    elif status == '⚪':
+        messages.append("Air quality data currently unavailable.")
+        messages.append("Station may be offline or undergoing maintenance.")
 
     # List elevated pollutants with health impacts
     if high_pollutants or moderate_pollutants:
@@ -218,6 +238,8 @@ def analyze_air_quality(data_dict):
             messages.append(f"🏭 Typical sources: {pollutant_sources[top_pollutant]}")
         elif top_pollutant == 'co':
             messages.append(f"🚗 Typical sources: {pollutant_sources[top_pollutant]}")
+        elif top_pollutant == 'c6h6':
+            messages.append(f"⛽ Typical sources: {pollutant_sources[top_pollutant]}")
 
     return '\n'.join(messages) if messages else None
 
